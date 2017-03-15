@@ -8,19 +8,27 @@
 """
 
 from ..config.log import logger
+from ..common import fields as F
+from ..common import error as error
+
+import image_pulling as im_p
+
 def _fetch_url(task_q,url_fetch_q):
     while True:
         info = task_q.get()
-        logger.info("info->picUrl:{}".format(info['picUrl']))
-        url_fetch_q.put(info)
+        if info.has_key(F.PICURL):
+            logger.info("info->picUrl: {}".format(info[F.PICURL]))
+            url_fetch_q.put(info)
 
 def _fetch_img(url_fetch_q,img_q):
     while True:
         info = url_fetch_q.get()
-        info['img'] = "person picture"
-        logger.info("info->img:{}".format(info['img']))
-        logger.info(img_q.qsize())
-        img_q.put(info)
+        content = im_p.pull_image(info[F.PICURL])
+        if content > 0 :
+            info[F.IMG] = content
+            #logger.info("info->img:{}".format(info['img']))
+            logger.info("img_q: {}".format(img_q.qsize()))
+            img_q.put(info)
 
 def fetch_url(task_q,url_fetch_q):
     _fetch_url(task_q,url_fetch_q)

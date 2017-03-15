@@ -11,6 +11,6 @@ from logging.config import fileConfig
 
 fileConfig('SmartVision/config/logger_config.ini')
 logger=logging.getLogger('infoLogger')
-logger.info('test1')
-logger_error=logging.getLogger('errorhandler')
-logger_error.error('test5')
+#logger.info('test1')
+logger_to_file=logging.getLogger('errorhandler')
+#logger_error.error('test5')
