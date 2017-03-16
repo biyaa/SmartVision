@@ -16,6 +16,13 @@ def _is_analysizable(info):
         result = True
     return result
 
+def _get_batch_imgs(infos):
+    imgs = []
+    for info in infos:
+        img = info[F.IMG]
+        imgs.append(img)
+    return imgs
+
 def _get_next_batch(img_q, result_q, num):
     infos = []
     for i in range(num):
@@ -26,6 +33,7 @@ def _get_next_batch(img_q, result_q, num):
             else:
                 result_q.put(info)
         else:
+            time.sleep(0.5)  # interval 500 millisecs to submit to analyzie
             break
     return infos
 
@@ -37,8 +45,10 @@ def _put_result(infos, result_q):
 def _recognition_img(img_q,result_q):
     while True:
         infos = _get_next_batch(img_q,result_q,8)
+        imgs = []
         if len(infos)>0:
             logger.info("analyizing number of images:{}".format(len(infos)))
+            imgs = _get_batch_imgs(infos)
             time.sleep(1)
             _put_result(infos,result_q)
 

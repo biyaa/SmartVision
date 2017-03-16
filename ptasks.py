@@ -18,10 +18,10 @@ import SmartVision.result.analysis_result as a_result
 
 # 1. 创建队列
 
-task_queue = Queue(maxsize=8)               # 任务队列
-url_queue = Queue(maxsize=8)                # 图片获取队列
-img_queue = Queue(maxsize=8)                # 图片队列
-result_queue = Queue(maxsize=8)             # 分析结果队列
+task_queue = Queue(maxsize=32)               # 任务队列
+url_queue = Queue(maxsize=32)                # 图片获取队列
+img_queue = Queue(maxsize=32)                # 图片队列
+result_queue = Queue(maxsize=32)             # 分析结果队列
 
 
 
@@ -40,7 +40,7 @@ def create_url_getting_thd(name="url-get-thread"):
 
     return thd
 
-def create_img_getting_thds(name="img-get-thread", thd_num = 1):
+def create_img_getting_thds(name="img-get-thread", thd_num = 8):
     global task_queue
     global img_fetching_queue
     thds = []
