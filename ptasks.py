@@ -7,6 +7,7 @@
     copyright: hikvision(c) 2017 company limited.
 """
 import threading
+import sys
 from Queue import Queue
 import SmartVision.task.analysis_task as a_task
 import SmartVision.image.image_mgr as img_mgr
@@ -30,6 +31,7 @@ result_queue = Queue(maxsize=32)             # 分析结果队列
 def create_task_getting_thd(name="task-get-thread"):
     global task_queue
     thd = threading.Thread(target = a_task.fetch_task, args = (task_queue,), name = name)
+    thd.setDaemon(True)
     return thd
 
 
@@ -37,7 +39,7 @@ def create_url_getting_thd(name="url-get-thread"):
     global task_queue
     global img_fetching_queue
     thd = threading.Thread(target = img_mgr.fetch_url, args = (task_queue,url_queue), name = name)
-
+    thd.setDaemon(True)
     return thd
 
 def create_img_getting_thds(name="img-get-thread", thd_num = 8):
@@ -46,6 +48,7 @@ def create_img_getting_thds(name="img-get-thread", thd_num = 8):
     thds = []
     for i in range(thd_num):
         thd = threading.Thread(target = img_mgr.fetch_img, args = (url_queue,img_queue),name = name + "-"+ str(i) )
+        thd.setDaemon(True)
         thds.append(thd)
 
     return thds
@@ -55,35 +58,51 @@ def create_img_recognition_thd(name="img-recog-thread"):
     global task_queue
     global img_fetching_queue
     thd = threading.Thread(target = ssd.recognition_img, args = (img_queue,result_queue), name = name)
-
+    thd.setDaemon(True)
     return thd
 
 def create_result_putback_thd(name="result-putback-thread"):
     global task_queue
     global img_fetching_queue
     thd = threading.Thread(target = a_result.response_result, args = (result_queue,), name = name)
+    thd.setDaemon(True)
 
     return thd
 
 
-def main():
-    t1 = create_task_getting_thd()
-    t1.start()
+def create_all_threads():
+    t_t = create_task_getting_thd()
+    t_u = create_url_getting_thd()
+    t_i = create_img_getting_thds()
+    t_r = create_img_recognition_thd()
+    t_p = create_result_putback_thd()
 
-    t2 = create_url_getting_thd()
-    t2.start()
+    thds = [t_t,t_u] + t_i + [t_r,t_p]
+
+    return thds
     
-    t3 = create_img_getting_thds()
-    for t in t3:
-        t.start()
 
-    t4 = create_img_recognition_thd()
-    t4.start()
+def run_all_threads(thds):
+    for thd in thds:
+        print(thd.getName() + " is running...")
+        thd.start()
 
-    t5 = create_result_putback_thd()
-    t5.start()
+def daemon_all_threads(thds):
+    while True:
+        cmd = ""
+        cmd = raw_input()
+        if cmd == "quit":
+            break
 
-    print("main ended.")
+
+def main():
+    threads = create_all_threads()
+    run_all_threads(threads)
+    daemon_all_threads(threads)
+
+
+    print("main ended...")
+    sys.exit(0)
 
 if __name__ == "__main__":
     main()

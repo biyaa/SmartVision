@@ -17,7 +17,7 @@ def _fetch_url(task_q,url_fetch_q):
     while True:
         info = task_q.get()
         if info[F.ERRORCODE] == 0:
-            logger.debug("fetch info->picUrl: {}".format(info[F.PICURL]))
+            logger.debug("fetched info->picUrl: {}".format(info[F.PICURL]))
         url_fetch_q.put(info)
 
 def _fetch_img(url_fetch_q,img_q):
