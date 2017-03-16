@@ -14,7 +14,7 @@ def pull_image(url):
     response = urllib2.urlopen(request)
     content = response.read()
     if (content):
-        logger.info(len(content))
+        pass
     else:
         content = ""
     return content

@@ -19,7 +19,7 @@ import SmartVision.result.analysis_result as a_result
 # 1. 创建队列
 
 task_queue = Queue(maxsize=8)               # 任务队列
-url_queue = Queue(maxsize=8)       # 图片获取队列
+url_queue = Queue(maxsize=8)                # 图片获取队列
 img_queue = Queue(maxsize=8)                # 图片队列
 result_queue = Queue(maxsize=8)             # 分析结果队列
 
@@ -74,7 +74,8 @@ def main():
     t2.start()
     
     t3 = create_img_getting_thds()
-    t3[0].start()
+    for t in t3:
+        t.start()
 
     t4 = create_img_recognition_thd()
     t4.start()

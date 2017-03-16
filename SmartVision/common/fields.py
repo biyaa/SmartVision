@@ -16,7 +16,8 @@ YMAX = "ymax"                                           #
 INDEXCODETAG = "indexCodeTag"                           # 采集来源
 COLLECTTIME = "collectTime"                             # 采集时间
 FINISHEDTIME = "finishedTime"                           # 分析完成时间
-INTELLIGENTRESULTTYPE = "intelligentResultType"         # 分析类型,或结果类型为真
+INTELLIGENTRESULTTYPE = "intelligentResultType"         # 分析类型
+INTELLIGENTTYPES = "intelligentTypes"                   # 分析结果类型, 且结果为真
 ERRORCODE = "errorCode"                                 # 错误码，0 为正确
 # 中间数据
 IMG = "img"                                             # 图片内容

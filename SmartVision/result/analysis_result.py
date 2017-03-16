@@ -8,11 +8,13 @@
 """
 
 from ..config.log import logger
+from ..common import fields as F
+from ..common import error as error
 
 def _response_result(result_q):
     while True:
         info = result_q.get()
-        logger.info("info->result:{}".format(info['result']))
+        logger.info("info->result:{}".format(info[F.INTELLIGENTRESULTTYPE]))
 
 def response_result(result_q):
     _response_result(result_q)

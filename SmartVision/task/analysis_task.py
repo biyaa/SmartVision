@@ -21,7 +21,7 @@ def _fetch_task(q):
         for info in infos:
             info[F.ERRORCODE] = 0
             if not _verify_ele(info):
-                info[F.ERRORCODE] = error.ERROR_FORMAT
+                info[F.ERRORCODE] = error.ERROR_FORMAT_CONTENT
                 
             logger.info(info)
             q.put(info)
@@ -42,7 +42,7 @@ def _verify_ele(info):
     if not info.has_key(F.PICURL):
         result = False
 
-    if not info.has_key(F.INTELLIGENTRESULTTYPE):
+    if not info.has_key(F.INTELLIGENTTYPES):
         result = False
 
     logger.debug("check task format: " + str(result))
