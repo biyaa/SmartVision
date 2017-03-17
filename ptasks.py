@@ -14,7 +14,6 @@ import SmartVision.image.image_mgr as img_mgr
 import SmartVision.ai.ssd as ssd
 import SmartVision.result.analysis_result as a_result
 
-from  SmartVision.ai.caffe_init import Ai_ssd as Ai_ssd
 
 
 # 1. 创建队列
@@ -25,8 +24,9 @@ img_queue = Queue(maxsize=32)                # 图片队列
 result_queue = Queue(maxsize=32)             # 分析结果队列
 
 # 2. 初始化模型
-ai_ssd = Ai_ssd()
-
+#ai_ssd = Ai_ssd()
+#ai_ssd.init_model()
+#ai_ssd.look_picture()
 # 3. 创建线程
 
 def create_task_getting_thd(name="task-get-thread"):

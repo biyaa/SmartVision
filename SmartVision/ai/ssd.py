@@ -10,6 +10,7 @@ import time
 from ..config.log import logger
 from ..common import fields as F
 from ..common import error as error
+from .caffe_ssd import Ai_ssd
 def _is_analysizable(info):
     result = False
     if info[F.ERRORCODE] == 0:
@@ -43,13 +44,15 @@ def _put_result(infos, result_q):
         result_q.put(info)
 
 def _recognition_img(img_q,result_q):
+    ai = Ai_ssd()
+    ai.init_model()
     while True:
         infos = _get_next_batch(img_q,result_q,8)
         imgs = []
         if len(infos)>0:
             logger.info("analyizing number of images:{}".format(len(infos)))
             imgs = _get_batch_imgs(infos)
-            time.sleep(1)
+            ai.pred_picture(infos)
             _put_result(infos,result_q)
 
 def recognition_img(img_q,result_q):
