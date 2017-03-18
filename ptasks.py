@@ -23,24 +23,26 @@ url_queue = Queue(maxsize=32)                # 图片获取队列
 img_queue = Queue(maxsize=32)                # 图片队列
 result_queue = Queue(maxsize=32)             # 分析结果队列
 
-# 2. 初始化模型
-#ai_ssd = Ai_ssd()
-#ai_ssd.init_model()
-#ai_ssd.look_picture()
+# 2. 线程状态管理
+thread_stat_map = {}
 # 3. 创建线程
+
+def _create_thread(target=None,args=(),name=""):
+    global thread_stat_map
+    thd = threading.Thread(target = target, args = args, name = name)
+    thd.setDaemon(True)
+    return thd
 
 def create_task_getting_thd(name="task-get-thread"):
     global task_queue
-    thd = threading.Thread(target = a_task.fetch_task, args = (task_queue,), name = name)
-    thd.setDaemon(True)
+    thd = _create_thread(target = a_task.fetch_task, args = (task_queue,), name = name)
     return thd
 
 
 def create_url_getting_thd(name="url-get-thread"):
     global task_queue
     global img_fetching_queue
-    thd = threading.Thread(target = img_mgr.fetch_url, args = (task_queue,url_queue), name = name)
-    thd.setDaemon(True)
+    thd = _create_thread(target = img_mgr.fetch_url, args = (task_queue,url_queue), name = name)
     return thd
 
 def create_img_getting_thds(name="img-get-thread", thd_num = 8):
@@ -48,8 +50,7 @@ def create_img_getting_thds(name="img-get-thread", thd_num = 8):
     global img_fetching_queue
     thds = []
     for i in range(thd_num):
-        thd = threading.Thread(target = img_mgr.fetch_img, args = (url_queue,img_queue),name = name + "-"+ str(i) )
-        thd.setDaemon(True)
+        thd = _create_thread(target = img_mgr.fetch_img, args = (url_queue,img_queue),name = name + "-"+ str(i) )
         thds.append(thd)
 
     return thds
@@ -58,15 +59,13 @@ def create_img_getting_thds(name="img-get-thread", thd_num = 8):
 def create_img_recognition_thd(name="img-recog-thread"):
     global task_queue
     global img_fetching_queue
-    thd = threading.Thread(target = ssd.recognition_img, args = (img_queue,result_queue), name = name)
-    thd.setDaemon(True)
+    thd = _create_thread(target = ssd.recognition_img, args = (img_queue,result_queue), name = name)
     return thd
 
 def create_result_putback_thd(name="result-putback-thread"):
     global task_queue
     global img_fetching_queue
-    thd = threading.Thread(target = a_result.response_result, args = (result_queue,), name = name)
-    thd.setDaemon(True)
+    thd = _create_thread(target = a_result.response_result, args = (result_queue,), name = name)
 
     return thd
 
@@ -88,18 +87,33 @@ def run_all_threads(thds):
         print(thd.getName() + " is running...")
         thd.start()
 
-def daemon_all_threads(thds):
+def show_threads(thds):
+    for t in thds:
+        print("...{} is alive? {}".format(t.getName(),t.isAlive()))
+
+def show_queues(ques):
+    names = ["tsk_queue","url_queue","img_queue","rst_queue"]
+    for q,n in zip(ques,names):
+        print("...size of {} we used is {}/{}".format(n,q.qsize(),32))
+
+def daemon_all_threads(thds,ques):
     while True:
         cmd = ""
         cmd = raw_input()
         if cmd == "quit":
             break
 
+        if cmd == "show thread":
+            show_threads(thds)
+
+        if cmd == "show queue":
+            show_queues(ques)
 
 def main():
+    queues = [task_queue,url_queue,img_queue,result_queue]
     threads = create_all_threads()
     run_all_threads(threads)
-    daemon_all_threads(threads)
+    daemon_all_threads(threads,queues)
 
 
     print("main ended...")
