@@ -11,49 +11,59 @@ from ..config.log import logger
 from ..common import fields as F
 from ..common import error as error
 from .caffe_ssd import Ai_ssd
-def _is_analysizable(info):
+def _is_analysizable(rec):
     result = False
-    if info[F.ERRORCODE] == 0:
+    if rec[F.ERRORCODE] == 0:
         result = True
     return result
 
-def _get_batch_imgs(infos):
+def _get_batch_imgs(records):
     imgs = []
-    for info in infos:
-        img = info[F.IMG]
+    for rec in records:
+        img = rec[F.IMG]
         imgs.append(img)
     return imgs
 
 def _get_next_batch(img_q, result_q, num):
-    infos = []
+    records = []
     for i in range(num):
         if img_q.qsize() >0:
-            info = img_q.get()
-            if _is_analysizable(info):
-                infos.append(info)
+            rec = img_q.get()
+            if _is_analysizable(rec):
+                records.append(rec)
             else:
-                result_q.put(info)
+                result_q.put(rec)
         else:
             time.sleep(0.5)  # interval 500 millisecs to submit to analyzie
             break
-    return infos
+    return records
 
-def _put_result(infos, result_q):
-    for info in infos:
-        info[F.INTELLIGENTRESULTTYPE] = [1]
-        result_q.put(info)
+def _clear_img(rec):
+    del rec[F.IMG]
+    return rec
+
+def _tag_time(rec):
+    rec[F.FINISHEDTIME] = int(time.time() * 1000)
+    return rec
+
+def _put_result(records, result_q):
+    for rec in records:
+#        rec[F.INTELLIGENTRESULTTYPE] = [1]
+        rec = _tag_time(rec)
+        rec = _clear_img(rec)
+        result_q.put(rec)
 
 def _recognition_img(img_q,result_q):
     ai = Ai_ssd()
     ai.init_model()
     while True:
-        infos = _get_next_batch(img_q,result_q,8)
+        records = _get_next_batch(img_q,result_q,8)
         imgs = []
-        if len(infos)>0:
-            logger.info("analyizing number of images:{}".format(len(infos)))
-            imgs = _get_batch_imgs(infos)
-            ai.pred_picture(infos)
-            _put_result(infos,result_q)
+        if len(records)>0:
+            logger.info("analyizing number of images:{}".format(len(records)))
+            imgs = _get_batch_imgs(records)
+            ai.pred_picture(records)
+            _put_result(records,result_q)
 
 def recognition_img(img_q,result_q):
     _recognition_img(img_q,result_q)

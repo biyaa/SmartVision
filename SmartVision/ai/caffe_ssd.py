@@ -26,6 +26,52 @@ class Ai_ssd(object):
     def __init__(self):
         self.is_init = False
 
+    def _split_result(self,detections,img_seq):
+
+        begin = img_seq * 200
+        end = (img_seq + 1) * 200
+        #print(begin,end)
+        
+        # Parse the outputs.
+        det_label = detections[0,0,:,1]
+        det_conf = detections[0,0,:,2]
+        det_xmin = detections[0,0,:,3]
+        det_ymin = detections[0,0,:,4]
+        det_xmax = detections[0,0,:,5]
+        det_ymax = detections[0,0,:,6]
+        
+        # Get detections with confidence higher than 0.1.
+        top_indices = [i for i, conf in enumerate(det_conf) if conf >= 0.1]                                  #####################
+        #print (top_indices)
+        top_indices_i = [i for i in top_indices if i>=begin and i<end]
+        
+        #print (top_indices_i)
+        top_conf = det_conf[top_indices_i]
+        top_label_indices = det_label[top_indices_i].tolist()
+        top_labels = self.get_labelname(self.labelmap, top_label_indices)
+        top_xmin = det_xmin[top_indices_i]
+        top_ymin = det_ymin[top_indices_i]
+        top_xmax = det_xmax[top_indices_i]
+        top_ymax = det_ymax[top_indices_i]
+        ####################################################
+        '''
+        umbrella chair
+        table
+        chair >= 6
+        '''
+        #limistprint = {"umbrella":0.1,"chair":0.1,"dining table":0.1}
+        limistprint = {"umbrella":0,"chair":0,"dining table":0}
+        logger.debug(top_labels[:len(top_indices_i)])
+        for i in range(len(top_indices_i)): #top_conf.shape[0]):
+            label_name = top_labels[i]
+            if label_name in limistprint:
+                limistprint[label_name]=limistprint[label_name]+1
+
+        if limistprint["dining table"] > 0 or limistprint["chair"] >=5 or (limistprint["chair"] > 0 and limistprint["umbrella"]):
+            return True
+        else:
+            return False
+
     def init_model(self,caffe_root='/mnt/nndisk/tim/SmartVision/caffe-ssd'):
         web_path = os.getcwd()
         self.caffe_root = caffe_root
@@ -85,14 +131,14 @@ class Ai_ssd(object):
             assert found == True
         return labelnames
 
-    def filter_by_capaility(self,infos):
+    def filled_by_capaility(self,records):
         r_map = {} 
         r_imgs = []
         i = 0
-        for info in infos:
-            if set(self.capability).issubset(info[F.INTELLIGENTTYPES]):
-                r_imgs.append(info[F.IMG])
-                r_map[i] = info[F.UUID]
+        for rec in records:
+            if set(self.capability).issubset(rec[F.INTELLIGENTTYPES]):
+                r_imgs.append(rec[F.IMG])
+                r_map[i] = rec
                 i = i + 1
 
         return (r_imgs,r_map)
@@ -132,16 +178,16 @@ class Ai_ssd(object):
         return images
 
     #  ananlyize img through by nn
-    def pred_picture(self, infos,filepath="caffe-ssd/testdata/test.jpg"):
+    def pred_picture(self, records, ai_types =[1] ):
 
         start_time = time.time()
-        imgs_content,imgs_map = self.filter_by_capaility(infos)
+        imgs_content,imgs_map = self.filled_by_capaility(records)
         img_num = len(imgs_content)
         logger.debug("pred img num:{}".format(img_num))
         
         imgs = self.convert_to_img(imgs_content)
         ####################################################
-        #image = self.caffe.io.load_image(filepath)                    #####################
+        #image = from  memory
         
         ####################################################
         self.net.blobs['data'].reshape(img_num,3,self.image_resize,self.image_resize)
@@ -152,41 +198,18 @@ class Ai_ssd(object):
         
         # Forward pass.
         detections = self.net.forward()['detection_out']
+
+        rec_result = []
+
+        for i in range(img_num):
+            r = self._split_result(detections,i)
+            rec_result.append(r)
+
         
-        # Parse the outputs.
-        det_label = detections[0,0,:,1]
-        det_conf = detections[0,0,:,2]
-        det_xmin = detections[0,0,:,3]
-        det_ymin = detections[0,0,:,4]
-        det_xmax = detections[0,0,:,5]
-        det_ymax = detections[0,0,:,6]
-        
-        # Get detections with confidence higher than 0.1.
-        top_indices = [i for i, conf in enumerate(det_conf) if conf >= 0.1]                                  #####################
-        
-        top_conf = det_conf[top_indices]
-        top_label_indices = det_label[top_indices].tolist()
-        top_labels = self.get_labelname(self.labelmap, top_label_indices)
-        top_xmin = det_xmin[top_indices]
-        top_ymin = det_ymin[top_indices]
-        top_xmax = det_xmax[top_indices]
-        top_ymax = det_ymax[top_indices]
-        ####################################################
-        '''
-        umbrella chair
-        table
-        chair >= 6
-        '''
-        #limistprint = {"umbrella":0.1,"chair":0.1,"dining table":0.1}
-        limistprint = {"umbrella":0,"chair":0,"dining table":0}
-        logger.debug(top_labels[:len(top_indices)])
-        for i in range(top_conf.shape[0]):
-            label_name = top_labels[i]
-            if label_name in limistprint:
-                limistprint[label_name]=limistprint[label_name]+1
+        for i in range(img_num):
+            rec = imgs_map[i]
+            if rec_result[i] :
+                rec[F.INTELLIGENTRESULTTYPE] = rec[F.INTELLIGENTRESULTTYPE] + ai_types  #暂时没有分析多个能力
 
         logger.info("Deep looking takes {} secs.".format(time.time()-start_time))
-        if limistprint["dining table"] > 0 or limistprint["chair"] >=5 or (limistprint["chair"] > 0 and limistprint["umbrella"]):
-            return 1
-        else:
-            return 0
+

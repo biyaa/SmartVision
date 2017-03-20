@@ -17,34 +17,29 @@ def _fetch_task(q):
     consumer.subscribe(['city-management-intelligent-analyze'])
     for msg in consumer:
         value = msg.value
-        infos = json.loads(value)
-        for info in infos:
-            info[F.ERRORCODE] = 0
-            if not _verify_ele(info):
-                info[F.ERRORCODE] = error.ERROR_FORMAT_CONTENT
+        records = json.loads(value)
+        for rec in records:
+            rec[F.ERRORCODE] = 0
+            if not _verify_ele(rec):
+                rec[F.ERRORCODE] = error.ERROR_FORMAT_CONTENT
                 
-            logger.info(info)
-            q.put(info)
+            logger.info(rec)
+            q.put(rec)
 
-#    while True:
-#        info = {}
-#        info['uuid'] = "aaaaa"
-#        info['picUrl'] = "http://www.baidu.com"
-#        info['areaCoords'] = 33
-#        logger.info("fetchhing task...")
-#        q.put(info)
 
-def _verify_ele(info):
+
+def _verify_ele(rec):
     result = True
-    if not info.has_key(F.UUID):
+    if not rec.has_key(F.UUID):
         result = False
 
-    if not info.has_key(F.PICURL):
+    if not rec.has_key(F.PICURL):
         result = False
 
-    if not info.has_key(F.INTELLIGENTTYPES):
+    if not rec.has_key(F.INTELLIGENTTYPES):
         result = False
 
+    rec[F.INTELLIGENTRESULTTYPE] = [] 
     logger.debug("check task format: " + str(result))
     return result
 

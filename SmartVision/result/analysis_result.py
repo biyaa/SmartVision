@@ -15,6 +15,7 @@ def _response_result(result_q):
     while True:
         info = result_q.get()
         logger.info("info->result:{}".format(info[F.INTELLIGENTRESULTTYPE]))
+        logger.debug("result info:{}".format(info))
 
 def response_result(result_q):
     _response_result(result_q)
