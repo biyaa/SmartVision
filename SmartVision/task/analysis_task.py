@@ -7,6 +7,7 @@
     copyright: hikvision(c) 2017 company limited.
 """
 import json
+#import pdb
 from kafka import KafkaConsumer
 from ..config.log import logger
 from ..common import error as error
@@ -14,7 +15,7 @@ from ..common import fields as F
 
 def _fetch_task(q):
     consumer = KafkaConsumer(bootstrap_servers='10.100.60.68:9092')
-    consumer.subscribe(['city-management-intelligent-analyze'])
+    consumer.subscribe(['CITY-MANAGEMENT-INTELLIGENT-ANALYZE'])
     for msg in consumer:
         value = msg.value
         records = json.loads(value)
@@ -44,4 +45,5 @@ def _verify_ele(rec):
     return result
 
 def fetch_task(q):
+    #pdb.set_trace()
     _fetch_task(q)

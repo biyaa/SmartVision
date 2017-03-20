@@ -7,6 +7,7 @@
     copyright: hikvision(c) 2017 company limited.
 """
 import threading
+import time
 import sys
 from Queue import Queue
 import SmartVision.task.analysis_task as a_task
@@ -99,7 +100,7 @@ def show_queues(ques):
 def daemon_all_threads(thds,ques):
     while True:
         cmd = ""
-        cmd = raw_input()
+        #cmd = raw_input()
         if cmd == "quit":
             break
 
@@ -108,6 +109,8 @@ def daemon_all_threads(thds,ques):
 
         if cmd == "show queue":
             show_queues(ques)
+
+        time.sleep(5)
 
 def main():
     queues = [task_queue,url_queue,img_queue,result_queue]
