@@ -18,7 +18,9 @@ from PIL import Image
 from StringIO import StringIO
 from google.protobuf import text_format
 from ..config.log import logger
+from ..config import svs
 from ..common import fields as F
+from ..common import convention as C
 from ..common import error as error
 
 
@@ -74,14 +76,17 @@ class Ai_ssd(object):
 
     def init_model(self,caffe_root='/mnt/nndisk/tim/SmartVision/caffe-ssd'):
         web_path = os.getcwd()
-        self.caffe_root = caffe_root
+        self.caffe_root =  os.path.join(web_path, caffe_root)
         # Make sure that caffe is on the python path:
-        os.chdir(caffe_root)
-        sys.path.insert(0, caffe_root + '/python')                                                 #####################
+        os.chdir(self.caffe_root)
+        sys.path.insert(0, self.caffe_root + '/python')                                                 #####################
         import caffe
         self.caffe = caffe
-        self.caffe.set_device(0)
-        self.caffe.set_mode_gpu()
+        if svs.compute_mode == "GPU":
+            self.caffe.set_device(0)
+            self.caffe.set_mode_gpu()
+        else:
+            self.caffe.set_mode_cpu()
 
         ####################################################
         from caffe.proto import caffe_pb2
@@ -93,7 +98,7 @@ class Ai_ssd(object):
         text_format.Merge(str(file.read()), self.labelmap)
 
 
-        self.capability = [1]
+        self.capability = [C.OCCUPY_FOOTWAY_BY_CATERING]
 
         ####################################################
 
@@ -210,6 +215,9 @@ class Ai_ssd(object):
             rec = imgs_map[i]
             if rec_result[i] :
                 rec[F.INTELLIGENTRESULTTYPE] = rec[F.INTELLIGENTRESULTTYPE] + ai_types  #暂时没有分析多个能力
+            else:
+                if len(rec[F.INTELLIGENTRESULTTYPE]) == 0 :
+                    rec[F.INTELLIGENTRESULTTYPE] = [C.RESULT_NO] 
 
         logger.info("Deep looking takes {} secs.".format(time.time()-start_time))
 

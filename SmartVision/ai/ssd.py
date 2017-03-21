@@ -8,6 +8,7 @@
 """
 import time
 from ..config.log import logger
+from ..config import svs
 from ..common import fields as F
 from ..common import error as error
 from .caffe_ssd import Ai_ssd
@@ -55,7 +56,7 @@ def _put_result(records, result_q):
 
 def _recognition_img(img_q,result_q):
     ai = Ai_ssd()
-    ai.init_model()
+    ai.init_model(caffe_root=svs.ssd_root)
     while True:
         records = _get_next_batch(img_q,result_q,8)
         imgs = []

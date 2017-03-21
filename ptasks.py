@@ -10,6 +10,7 @@ import threading
 import time
 import sys
 from Queue import Queue
+import SmartVision.config.svs as svs
 import SmartVision.task.analysis_task as a_task
 import SmartVision.image.image_mgr as img_mgr
 import SmartVision.ai.ssd as ssd
@@ -19,10 +20,10 @@ import SmartVision.result.analysis_result as a_result
 
 # 1. 创建队列
 
-task_queue = Queue(maxsize=32)               # 任务队列
-url_queue = Queue(maxsize=32)                # 图片获取队列
-img_queue = Queue(maxsize=32)                # 图片队列
-result_queue = Queue(maxsize=32)             # 分析结果队列
+task_queue = Queue(maxsize=svs.queue_maxsize)               # 任务队列
+url_queue = Queue(maxsize=svs.queue_maxsize)                # 图片获取队列
+img_queue = Queue(maxsize=svs.queue_maxsize)                # 图片队列
+result_queue = Queue(maxsize=svs.queue_maxsize)             # 分析结果队列
 
 # 2. 线程状态管理
 thread_stat_map = {}
@@ -74,7 +75,7 @@ def create_result_putback_thd(name="result-putback-thread"):
 def create_all_threads():
     t_t = create_task_getting_thd()
     t_u = create_url_getting_thd()
-    t_i = create_img_getting_thds()
+    t_i = create_img_getting_thds(thd_num=svs.img_get_thd_num)
     t_r = create_img_recognition_thd()
     t_p = create_result_putback_thd()
 
@@ -95,12 +96,12 @@ def show_threads(thds):
 def show_queues(ques):
     names = ["tsk_queue","url_queue","img_queue","rst_queue"]
     for q,n in zip(ques,names):
-        print("...size of {} we used is {}/{}".format(n,q.qsize(),32))
+        print("...size of {} we used is {}/{}".format(n,q.qsize(),svs.queue_maxsize))
 
 def daemon_all_threads(thds,ques):
     while True:
         cmd = ""
-        #cmd = raw_input()
+        cmd = raw_input()
         if cmd == "quit":
             break
 

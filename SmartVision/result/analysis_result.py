@@ -13,7 +13,9 @@ import time
 from kafka import KafkaProducer
 from kafka.errors import KafkaError
 from ..config.log import logger
+from ..config import svs
 from ..common import fields as F
+from ..common import convention as C
 from ..common import error as error
 
 def _get_next_batch(result_q, num=8):
@@ -28,16 +30,24 @@ def _get_next_batch(result_q, num=8):
     return records
 
 def _response_result(result_q):
-    producer = KafkaProducer(bootstrap_servers=['10.100.60.68:9092'], api_version=(0,9),retries=3)
+    logger.debug("kafka:{},topic:{},api_version{}".format(svs.servers, svs.result_topic, svs.api_version))
+    producer = KafkaProducer(bootstrap_servers=svs.servers, api_version=svs.api_version,retries=3)
     while True:
         records = _get_next_batch(result_q)
         #logger.info("size of thread {}".format(len(records)))
         for rec in records:
             logger.info("info->result:{}".format(rec[F.INTELLIGENTRESULTTYPE]))
+            for t in rec[F.INTELLIGENTRESULTTYPE]:
+                if C.OCCUPY_FOOTWAY_BY_CATERING == t:
+                    logger.debug("{} OCCUPIED_FOOTWAY_BY_CATERING".format(rec[F.UUID]))
+                else:
+                    logger.debug("{} HASN'T OCCUPIED_FOOTWAY_BY_CATERING".format(rec[F.UUID]))
+
+
             logger.debug("result info:{}".format(rec))
         if len(records):
             msg = json.dumps(records)
-            producer.send('CITY-MANAGEMENT-INTELLIGENT-ANALYZE-RESULT', msg)
+            producer.send(svs.result_topic, msg)
 
             producer.flush()
 
