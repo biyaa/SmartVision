@@ -28,7 +28,7 @@ def _get_next_batch(result_q, num=8):
     return records
 
 def _response_result(result_q):
-    producer = KafkaProducer(bootstrap_servers=['10.100.60.68:9092'],retries=3)
+    producer = KafkaProducer(bootstrap_servers=['10.100.60.68:9092'], api_version=(0,9),retries=3)
     while True:
         records = _get_next_batch(result_q)
         #logger.info("size of thread {}".format(len(records)))

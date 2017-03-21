@@ -14,7 +14,8 @@ from ..common import error as error
 from ..common import fields as F
 
 def _fetch_task(q):
-    consumer = KafkaConsumer(bootstrap_servers='10.100.60.68:9092')
+    logger.info("fetch task is running...")
+    consumer = KafkaConsumer(bootstrap_servers='10.100.60.68:9092', api_version = (0,9))
     consumer.subscribe(['CITY-MANAGEMENT-INTELLIGENT-ANALYZE'])
     for msg in consumer:
         value = msg.value
