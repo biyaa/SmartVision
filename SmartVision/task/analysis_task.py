@@ -16,14 +16,9 @@ from ..common import fields as F
 
 def _fetch_task(q):
     logger.info("fetch task is running...")
-    #bootstrap_servers='10.100.60.68:9092'
-    #ip = '10.100.60.68'
-    #port = '9093'
-    #api_version = (0,9)
-    #task_topic = 'CITY-MANAGEMENT-INTELLIGENT-ANALYZE'
 
     logger.debug("kafka:{},topic:{},api_version{}".format(svs.servers, svs.task_topic, svs.api_version))
-    consumer = KafkaConsumer(bootstrap_servers=svs.servers ,api_version = svs.api_version )
+    consumer = KafkaConsumer(bootstrap_servers=svs.servers, api_version = svs.api_version)
     consumer.subscribe(svs.task_topic)
     for msg in consumer:
         value = msg.value
@@ -54,5 +49,4 @@ def _verify_ele(rec):
     return result
 
 def fetch_task(q):
-    #pdb.set_trace()
     _fetch_task(q)

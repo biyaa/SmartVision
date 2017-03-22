@@ -10,7 +10,6 @@
 import multiprocessing as mp
 import time
 import sys
-from Queue import Queue
 import SmartVision.config.svs as svs
 import SmartVision.task.analysis_task as a_task
 import SmartVision.image.image_mgr as img_mgr
@@ -28,6 +27,7 @@ result_queue = mp.Queue(maxsize=svs.queue_maxsize)             # 分析结果队
 
 # 2. 线程状态管理
 process_stat_map = {}
+PROCSSES_CREATE_FUNC_MAP = {}
 # 3. 创建线程
 
 def _create_thread(target=None,args=(),name=""):
@@ -54,12 +54,16 @@ def create_url_getting_prcs(name="url-get-process"):
     prcs = _create_process(target = img_mgr.fetch_url, args = (task_queue,url_queue), name = name)
     return prcs
 
-def create_img_getting_prcss(name="img-get-process", para_num = 8):
+def create_img_getting_prcs(name="img-get-process", seq = 0):
     global task_queue
     global img_fetching_queue
+    prcs = _create_process(target = img_mgr.fetch_img, args = (url_queue,img_queue),name = name + "-"+ str(seq))
+    return prcs
+
+def create_img_getting_prcss(name="img-get-process", para_num = 8):
     prcss = []
     for i in range(para_num):
-        prcs = _create_process(target = img_mgr.fetch_img, args = (url_queue,img_queue),name = name + "-"+ str(i) )
+        prcs = create_img_getting_prcs(name, i)
         prcss.append(prcs)
 
     return prcss
@@ -79,7 +83,14 @@ def create_result_putback_prcs(name="result-putback-process"):
     return prcs
 
 
-def create_all_threads():
+def create_all_processes_map():
+    PROCSSES_CREATE_FUNC_MAP["task-get-process"] = create_task_getting_prcs
+    PROCSSES_CREATE_FUNC_MAP["url-get-process"] = create_url_getting_prcs
+    PROCSSES_CREATE_FUNC_MAP["img-get-process"] = create_img_getting_prcs
+    PROCSSES_CREATE_FUNC_MAP["img-recog-process"] = create_img_recognition_prcs
+    PROCSSES_CREATE_FUNC_MAP["result-putback-process"] = create_result_putback_prcs
+
+def create_all_processes():
     t_t = create_task_getting_prcs()
     t_u = create_url_getting_prcs()
     t_i = create_img_getting_prcss(para_num=svs.img_get_parallel_num)
@@ -105,6 +116,22 @@ def show_queues(ques):
     for q,n in zip(ques,names):
         print("...size of {} we used is {}/{}".format(n,q.qsize(),svs.queue_maxsize))
 
+def restart_process(prcss,name):
+    for prcs in prcss:
+        if prcs.name == name and not prcs.is_alive():
+            func = PROCSSES_CREATE_FUNC_MAP[name]
+            if "img-get-process" in name:
+                num = name.split("-")[-1]
+                if num.isdigit():
+                    num = int(num)
+                    prcs = func(num) 
+                    print "%s is restartting..." %name
+                    prcs.start()
+            else:
+                prcs = func()
+                print "%s is restartting..." %name
+                prcs.start()
+
 def daemon_all_processes(prcss,ques):
     while True:
         cmd = ""
@@ -118,13 +145,18 @@ def daemon_all_processes(prcss,ques):
         if cmd == "show queue":
             show_queues(ques)
 
+        if "restart" in cmd :
+            name = cmd.split(" ")[-1]
+            restart_process(prcss, name)
+
         time.sleep(5)
 
 def main():
     queues = [task_queue,url_queue,img_queue,result_queue]
-    threads = create_all_threads()
-    run_all_threads(threads)
-    daemon_all_processes(threads,queues)
+    processes = create_all_processes()
+    create_all_processes_map()
+    run_all_threads(processes)
+    daemon_all_processes(processes,queues)
 
 
     print("main ended...")
