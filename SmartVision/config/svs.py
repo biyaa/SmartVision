@@ -16,8 +16,8 @@ result_topic = 'CITY-MANAGEMENT-INTELLIGENT-ANALYZE-RESULT'
 ssd_root ='caffe-ssd'
 compute_mode = 'GPU'
 queue_maxsize = 32
-img_get_thd_num = 8
-batch_size = 8
+img_get_parallel_num = 8
+ai_parallel_num = 8
 
 with codecs.open('SmartVision/config/svs.conf', 'r', encoding='utf-8') as f:
     cp.readfp(f)
@@ -39,12 +39,12 @@ with codecs.open('SmartVision/config/svs.conf', 'r', encoding='utf-8') as f:
     if cp.has_option('svs', 'queue_maxsize'):
         queue_maxsize = cp.getint('svs','queue_maxsize')
 
-    if cp.has_option('svs', 'img_get_thd_num'):
-        img_get_thd_num = cp.getint('svs','img_get_thd_num')
+    if cp.has_option('svs', 'img_get_parallel_num'):
+        img_get_parallel_num = cp.getint('svs','img_get_parallel_num')
 
 
-    if cp.has_option('svs', 'batch_size'):
-        batch_size = cp.getint('svs','batch_size')
+    if cp.has_option('svs', 'ai_parallel_num'):
+        ai_parallel_num = cp.getint('svs','ai_parallel_num')
 
     if cp.has_option('svs', 'compute_mode'):
         compute_mode = cp.get('svs','compute_mode')

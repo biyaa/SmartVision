@@ -58,7 +58,7 @@ def _recognition_img(img_q,result_q):
     ai = Ai_ssd()
     ai.init_model(caffe_root=svs.ssd_root)
     while True:
-        records = _get_next_batch(img_q,result_q,8)
+        records = _get_next_batch(img_q,result_q,svs.ai_parallel_num)
         imgs = []
         if len(records)>0:
             logger.info("analyizing number of images:{}".format(len(records)))

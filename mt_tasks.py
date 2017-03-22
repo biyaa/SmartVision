@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    SmartVision.ptasks
+    SmartVision.mt_tasks
     ~~~~~~~~~~~~~~~~~~
     Created on 2017-03-13 11:02
     @author : huangguoxiong
@@ -75,7 +75,7 @@ def create_result_putback_thd(name="result-putback-thread"):
 def create_all_threads():
     t_t = create_task_getting_thd()
     t_u = create_url_getting_thd()
-    t_i = create_img_getting_thds(thd_num=svs.img_get_thd_num)
+    t_i = create_img_getting_thds(thd_num=svs.img_get_parallel_num)
     t_r = create_img_recognition_thd()
     t_p = create_result_putback_thd()
 
