@@ -47,10 +47,15 @@ def _tag_time(rec):
     rec[F.FINISHEDTIME] = int(time.time() * 1000)
     return rec
 
-def _put_result(records, result_q):
+def _put_result(records, result_q, is_ai_pred_exception=True):
     for rec in records:
 #        rec[F.INTELLIGENTRESULTTYPE] = [1]
-        rec = _tag_time(rec)
+        if len(rec[F.INTELLIGENTRESULTTYPE]) > 0:
+            rec = _tag_time(rec)
+        elif is_ai_pred_exception:
+            rec[F.ERRORCODE] = error.ERROR_SVS_AI_RUN_EXCEPTION
+        else:
+            rec[F.ERRORCODE] = error.ERROR_NOT_SUPPORT_AI_THE_TYPE
         rec = _clear_img(rec)
         result_q.put(rec)
 
@@ -63,8 +68,15 @@ def _recognition_img(img_q,result_q):
         if len(records)>0:
             logger.info("analyizing number of images:{}".format(len(records)))
             imgs = _get_batch_imgs(records)
-            ai.pred_picture(records)
-            _put_result(records,result_q)
+            is_ai_pred_exception =False
+            try:
+                ai.pred_picture(records)
+            except Exception,e:
+                is_ai_pred_exception =True
+                logger.error("Img ai_pred error:{}".format(repr(e)))
+            
+            _put_result(records,result_q,is_ai_pred_exception)
+
 
 def recognition_img(img_q,result_q):
     _recognition_img(img_q,result_q)

@@ -36,7 +36,7 @@ def _response_result(result_q):
         records = _get_next_batch(result_q)
         #logger.info("size of thread {}".format(len(records)))
         for rec in records:
-            logger.info("info->result:{}".format(rec[F.INTELLIGENTRESULTTYPE]))
+            logger.info("task->result:{}".format(rec[F.INTELLIGENTRESULTTYPE]))
             for t in rec[F.INTELLIGENTRESULTTYPE]:
                 if C.OCCUPY_FOOTWAY_BY_CATERING == t:
                     logger.debug("{} OCCUPIED_FOOTWAY_BY_CATERING".format(rec[F.UUID]))
@@ -44,7 +44,7 @@ def _response_result(result_q):
                     logger.debug("{} HASN'T OCCUPIED_FOOTWAY_BY_CATERING".format(rec[F.UUID]))
 
 
-            logger.debug("result info:{}".format(rec))
+            logger.debug("Through SmartVision AI, it preds the result(s) as blow:\n{}".format(rec))
         if len(records):
             msg = json.dumps(records)
             producer.send(svs.result_topic, msg)

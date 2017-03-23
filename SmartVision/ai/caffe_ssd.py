@@ -136,15 +136,19 @@ class Ai_ssd(object):
             assert found == True
         return labelnames
 
+    def is_capability(self,rec):
+        return set(self.capability).issubset(rec[F.INTELLIGENTTYPES])
+
     def filled_by_capaility(self,records):
         r_map = {} 
         r_imgs = []
         i = 0
         for rec in records:
-            if set(self.capability).issubset(rec[F.INTELLIGENTTYPES]):
+            if self.is_capability(rec):
                 r_imgs.append(rec[F.IMG])
                 r_map[i] = rec
                 i = i + 1
+
 
         return (r_imgs,r_map)
 
@@ -182,6 +186,7 @@ class Ai_ssd(object):
         
         return images
 
+
     #  ananlyize img through by nn
     def pred_picture(self, records, ai_types =[1] ):
 
@@ -189,11 +194,11 @@ class Ai_ssd(object):
         imgs_content,imgs_map = self.filled_by_capaility(records)
         img_num = len(imgs_content)
         logger.debug("pred img num:{}".format(img_num))
-        
+        # 如果符合条件的图片就分析
+        #if img_num > 0: 
         imgs = self.convert_to_img(imgs_content)
         ####################################################
         #image = from  memory
-        
         ####################################################
         self.net.blobs['data'].reshape(img_num,3,self.image_resize,self.image_resize)
 
@@ -201,23 +206,23 @@ class Ai_ssd(object):
             transformed_image = self.transformer.preprocess('data', imgs[i])
             self.net.blobs['data'].data[i,...] = transformed_image
         
-        # Forward pass.
-        detections = self.net.forward()['detection_out']
+            # Forward pass.
+            detections = self.net.forward()['detection_out']
 
-        rec_result = []
+            rec_result = []
 
-        for i in range(img_num):
-            r = self._split_result(detections,i)
-            rec_result.append(r)
+            for i in range(img_num):
+                r = self._split_result(detections,i)
+                rec_result.append(r)
 
-        
-        for i in range(img_num):
-            rec = imgs_map[i]
-            if rec_result[i] :
-                rec[F.INTELLIGENTRESULTTYPE] = rec[F.INTELLIGENTRESULTTYPE] + ai_types  #暂时没有分析多个能力
-            else:
-                if len(rec[F.INTELLIGENTRESULTTYPE]) == 0 :
-                    rec[F.INTELLIGENTRESULTTYPE] = [C.RESULT_NO] 
+            
+            for i in range(img_num):
+                rec = imgs_map[i]
+                if rec_result[i] :
+                    rec[F.INTELLIGENTRESULTTYPE] = rec[F.INTELLIGENTRESULTTYPE] + ai_types  #暂时没有分析多个能力
+                else:
+                    if len(rec[F.INTELLIGENTRESULTTYPE]) == 0 :
+                        rec[F.INTELLIGENTRESULTTYPE] = [C.RESULT_NO] 
 
-        logger.info("Deep looking takes {} secs.".format(time.time()-start_time))
+            logger.info("Deep looking takes {} secs.".format(time.time()-start_time))
 

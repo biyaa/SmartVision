@@ -22,14 +22,19 @@ def _fetch_task(q):
     consumer.subscribe(svs.task_topic)
     for msg in consumer:
         value = msg.value
-        records = json.loads(value)
-        for rec in records:
-            rec[F.ERRORCODE] = 0
-            if not _verify_ele(rec):
-                rec[F.ERRORCODE] = error.ERROR_FORMAT_CONTENT
-                
-            logger.info(rec)
-            q.put(rec)
+        try:
+            records = json.loads(value)
+            for rec in records:
+                rec[F.ERRORCODE] = 0
+                if not _verify_ele(rec):
+                    rec[F.ERRORCODE] = error.ERROR_FORMAT_CONTENT
+                    
+                logger.info(rec)
+                q.put(rec)
+
+        except Exception, e:
+            logger.error("Task Centent:{}".format(value))
+            logger.error("Task Error Type:{}".format(repr(e)))
 
 
 
@@ -45,7 +50,7 @@ def _verify_ele(rec):
         result = False
 
     rec[F.INTELLIGENTRESULTTYPE] = [] 
-    logger.debug("check task format: " + str(result))
+    logger.debug("Check task format: " + str(result))
     return result
 
 def fetch_task(q):

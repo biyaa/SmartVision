@@ -17,7 +17,9 @@ ssd_root ='caffe-ssd'
 compute_mode = 'GPU'
 queue_maxsize = 32
 img_get_parallel_num = 8
+img_get_retry = 3
 ai_parallel_num = 8
+
 
 with codecs.open('SmartVision/config/svs.conf', 'r', encoding='utf-8') as f:
     cp.readfp(f)
@@ -51,4 +53,7 @@ with codecs.open('SmartVision/config/svs.conf', 'r', encoding='utf-8') as f:
 
     if cp.has_option('svs', 'ssd_root'):
         ssd_root = cp.get('svs','ssd_root')
+
+    if cp.has_option('svs', 'img_get_retry'):
+        img_get_retry = cp.getint('svs','img_get_retry')
 
