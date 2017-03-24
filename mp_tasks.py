@@ -139,10 +139,10 @@ def daemon_all_processes(prcss,ques):
         if cmd == "quit":
             break
 
-        if cmd == "show process":
+        if "show proc" in cmd:
             show_processes(prcss)
 
-        if cmd == "show queue":
+        if "show que" in cmd:
             show_queues(ques)
 
         if "restart" in cmd :

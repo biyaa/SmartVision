@@ -44,7 +44,7 @@ def _clear_img(rec):
     return rec
 
 def _tag_time(rec):
-    rec[F.FINISHEDTIME] = int(time.time() * 1000)
+    rec[F.FINISHEDTIME] = str(int(time.time() * 1000))
     return rec
 
 def _put_result(records, result_q, is_ai_pred_exception=True):
