@@ -53,8 +53,8 @@ def _fetch_img(url_fetch_q,img_q,retries=3):
                     retried = retried + 1
                     logger.error("Img get error:{}".format(repr(e)))
                     _rand_sleep()
+            logger.info("url:{}, img size:{}".format(rec[F.PICURL],len(rec[F.IMG])))
 
-        logger.info("url:{}, img size:{}".format(rec[F.PICURL],len(rec[F.IMG])))
         img_q.put(rec)
 
 def fetch_url(task_q,url_fetch_q):

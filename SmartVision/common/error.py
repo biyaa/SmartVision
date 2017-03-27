@@ -13,3 +13,4 @@ ERROR_GETTING_IMG = 200                        #无法获得图片
 ERROR_OCCURRING_INTERNAL_SMARTVISION = 300     #分析服务内部错误
 ERROR_NOT_SUPPORT_AI_THE_TYPE = 301            #不支持本智能分析分析服务类型
 ERROR_SVS_AI_RUN_EXCEPTION = 302               #智能分析分析服务发生异常
+ERROR_SVS_IMG_NOT_CONTENT = 303                #智能分析图片没有达到要求

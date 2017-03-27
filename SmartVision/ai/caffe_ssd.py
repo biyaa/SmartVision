@@ -142,6 +142,7 @@ class Ai_ssd(object):
     def filled_by_capaility(self,records):
         r_map = {} 
         r_imgs = []
+
         i = 0
         for rec in records:
             if self.is_capability(rec):
@@ -149,11 +150,70 @@ class Ai_ssd(object):
                 r_map[i] = rec
                 i = i + 1
 
-
         return (r_imgs,r_map)
 
+    def verify_coords(self,running_rec):
+        result = True
+        area_coords = running_rec['area_coords']
+        width = area_coords[2] - area_coords[0]
+        height = area_coords[3] - area_coords[1]
+        if width < 10  and width > 6000:
+            result = False
+        
+        if height < 10 and height > 6000:
+            result = False
+
+        return result
+
+
+
+
+    def get_area_coords(self,image_coords,area_coords):
+        xmin_p = area_coords[F.XMIN]
+        ymin_p = area_coords[F.YMIN]
+        xmax_p = area_coords[F.XMAX]
+        ymax_p = area_coords[F.YMAX]
+        if xmin_p < 0 :
+            xmin_p = 0
+        if ymin_p < 0 :
+            ymin_p = 0
+        if xmax_p > 100 :
+            xmax_p = 100
+        if ymax_p > 100 :
+            ymax_p = 100
+
+        xmin  = int(image_coords[2] * (xmin_p / 100.0))
+        ymin  = int(image_coords[3] * (ymin_p / 100.0))
+        xmax  = int(image_coords[2] * (xmax_p / 100.0))
+        ymax  = int(image_coords[3] * (ymax_p / 100.0))
+        return (xmin,ymin,xmax,ymax)
+
+
+    def get_running_rec(self,rec):
+        running_rec = { }
+        rawImg = Image.open(StringIO(rec[F.IMG]))
+        running_rec['rec'] = rec
+        running_rec['img_coords'] = rawImg.getbbox()
+        logger.debug(running_rec['img_coords'])
+        running_rec['area_coords'] = self.get_area_coords(running_rec['img_coords'],rec[F.AREACOORDS])
+        logger.debug(running_rec['area_coords'])
+        running_rec['img'] = self.preprocess_img(rawImg,running_rec['area_coords'])
+        return running_rec
+
+
+    def get_runningrecs_by_capability(self,records):
+        r_records = []
+        for rec in records:
+            if self.is_capability(rec):
+                running_rec = self.get_running_rec(rec)
+                if self.verify_coords(running_rec):
+                    r_records.append(running_rec)
+                else:
+                    rec[F.ERRORCODE] = error.ERROR_SVS_IMG_NOT_CONTENT
+        return r_records
+
     #   convert content to array
-    def preprocess_img(self,img):
+    def preprocess_img(self,rawImg,coords):
         """
         Load an image converting from grayscale or alpha as needed.
         Parameters
@@ -165,7 +225,14 @@ class Ai_ssd(object):
             of size (H x W x 3) in RGB or
             of size (H x W x 1) in grayscale.
         """
-        img = np.array(Image.open(StringIO(img)))
+        #rawImg = Image.open(StringIO(img))
+        xmin = coords[0]
+        ymin = coords[1]
+        xmax = coords[2]
+        ymax = coords[3]
+
+
+        img = np.array(rawImg)
         img = skimage.img_as_float(img).astype(np.float32)
         logger.debug("decode jpg content:{}".format(img[:3,1,1]))
 
@@ -175,6 +242,10 @@ class Ai_ssd(object):
                 img = np.tile(img, (1, 1, 3))
         elif img.shape[2] == 4:
             img = img[:, :, :3]
+
+        img = img[xmin:xmax, ymin:ymax, :]
+
+        logger.debug(img.shape)
         return img
 
     #   convert content to array
@@ -191,19 +262,22 @@ class Ai_ssd(object):
     def pred_picture(self, records, ai_types =[1] ):
 
         start_time = time.time()
-        imgs_content,imgs_map = self.filled_by_capaility(records)
-        img_num = len(imgs_content)
+        running_recs = []
+        running_recs = self.get_runningrecs_by_capability(records)
+        #imgs_content,imgs_map = self.filled_by_capaility(records)
+        #img_num = len(imgs_content)
+        img_num = len(running_recs)
         logger.debug("pred img num:{}".format(img_num))
         # 如果符合条件的图片就分析
         #if img_num > 0: 
-        imgs = self.convert_to_img(imgs_content)
+        #imgs = self.convert_to_img(imgs_content)
         ####################################################
         #image = from  memory
         ####################################################
         self.net.blobs['data'].reshape(img_num,3,self.image_resize,self.image_resize)
 
-        for i in range(len(imgs)):
-            transformed_image = self.transformer.preprocess('data', imgs[i])
+        for i in range(img_num):
+            transformed_image = self.transformer.preprocess('data', running_recs[i]['img'])
             self.net.blobs['data'].data[i,...] = transformed_image
         
             # Forward pass.
@@ -217,7 +291,8 @@ class Ai_ssd(object):
 
             
             for i in range(img_num):
-                rec = imgs_map[i]
+                #rec = imgs_map[i]
+                rec = running_recs[i]['rec']
                 if rec_result[i] :
                     rec[F.INTELLIGENTRESULTTYPE] = rec[F.INTELLIGENTRESULTTYPE] + ai_types  #暂时没有分析多个能力
                 else:

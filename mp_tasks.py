@@ -11,6 +11,7 @@ import multiprocessing as mp
 import time
 import sys
 import SmartVision.config.svs as svs
+import SmartVision.common.global_env as ge
 import SmartVision.task.analysis_task as a_task
 import SmartVision.image.image_mgr as img_mgr
 import SmartVision.ai.ssd as ssd
@@ -25,10 +26,10 @@ url_queue = mp.Queue(maxsize=svs.queue_maxsize)                # 图片获取队
 img_queue = mp.Queue(maxsize=svs.queue_maxsize)                # 图片队列
 result_queue = mp.Queue(maxsize=svs.queue_maxsize)             # 分析结果队列
 
-# 2. 线程状态管理
+# 2. 进程状态管理
 process_stat_map = {}
 PROCSSES_CREATE_FUNC_MAP = {}
-# 3. 创建线程
+# 3. 创建进程
 
 def _create_thread(target=None,args=(),name=""):
     global thread_stat_map
@@ -39,7 +40,7 @@ def _create_thread(target=None,args=(),name=""):
 def _create_process(target=None,args=(),name=""):
     global process_stat_map
     prcs = mp.Process(target = target, args = args, name = name)
-    prcs.daemon = True
+    #prcs.daemon = True
     return prcs
 
 def create_task_getting_prcs(name="task-get-process"):
@@ -137,9 +138,10 @@ def daemon_all_processes(prcss,ques):
         cmd = ""
         cmd = raw_input()
         if cmd == "quit":
+            ge.EXIT_FLAG = True
             break
 
-        if "show proc" in cmd:
+        if "show pro" in cmd:
             show_processes(prcss)
 
         if "show que" in cmd:
@@ -157,6 +159,7 @@ def main():
     create_all_processes_map()
     run_all_threads(processes)
     daemon_all_processes(processes,queues)
+    processes[0].join()
 
 
     print("main ended...")

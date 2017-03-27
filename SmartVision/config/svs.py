@@ -13,6 +13,8 @@ servers = '10.100.60.68:9092'
 api_version = (0,9)
 task_topic = 'CITY-MANAGEMENT-INTELLIGENT-ANALYZE'
 result_topic = 'CITY-MANAGEMENT-INTELLIGENT-ANALYZE-RESULT'
+group_id = 'SMARTVISION_AI_CONSUMERGROUP'
+client_id = 'SMARTVISION_AI_CONSUMER'
 ssd_root ='caffe-ssd'
 compute_mode = 'GPU'
 queue_maxsize = 32
@@ -33,6 +35,12 @@ with codecs.open('SmartVision/config/svs.conf', 'r', encoding='utf-8') as f:
 
     if cp.has_option('kafka', 'result_topic'):
         result_topic = cp.get('kafka','result_topic')
+
+    if cp.has_option('kafka', 'group_id'):
+        group_id = cp.get('kafka','group_id')
+
+    if cp.has_option('kafka', 'client_id'):
+        client_id = cp.get('kafka','client_id')
 
     if cp.has_option('kafka', 'api_version'):
         s_api = cp.get('kafka','api_version')

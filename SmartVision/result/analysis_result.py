@@ -31,7 +31,7 @@ def _get_next_batch(result_q, num=8):
 
 def _response_result(result_q):
     logger.debug("kafka:{},topic:{},api_version{}".format(svs.servers, svs.result_topic, svs.api_version))
-    producer = KafkaProducer(bootstrap_servers=svs.servers, api_version=svs.api_version,retries=3)
+    producer = KafkaProducer(bootstrap_servers=svs.servers, api_version=svs.api_version,retries=3,client_id=svs.client_id)
     while True:
         records = _get_next_batch(result_q)
         #logger.info("size of thread {}".format(len(records)))
