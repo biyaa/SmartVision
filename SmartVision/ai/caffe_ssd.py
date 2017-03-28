@@ -190,13 +190,14 @@ class Ai_ssd(object):
 
 
     def get_running_rec(self,rec):
-        running_rec = { }
+        running_rec = {}
         rawImg = Image.open(StringIO(rec[F.IMG]))
         running_rec['rec'] = rec
         running_rec['img_coords'] = rawImg.getbbox()
-        logger.debug(running_rec['img_coords'])
+        #logger.debug(running_rec['img_coords'])
         running_rec['area_coords'] = self.get_area_coords(running_rec['img_coords'],rec[F.AREACOORDS])
-        logger.debug(running_rec['area_coords'])
+        #logger.debug(running_rec['area_coords'])
+        logger.debug("The picture format:{},img info:{},area info:{}".format(rawImg.format_description,running_rec['img_coords'],running_rec['area_coords']))
         running_rec['img'] = self.preprocess_img(rawImg,running_rec['area_coords'])
         return running_rec
 
@@ -234,7 +235,7 @@ class Ai_ssd(object):
 
         img = np.array(rawImg)
         img = skimage.img_as_float(img).astype(np.float32)
-        logger.debug("decode jpg content:{}".format(img[:3,1,1]))
+        logger.debug("decode picture content:{}".format(img[:3,1,1]))
 
         if img.ndim == 2:
             img = img[:, :, np.newaxis]
@@ -245,7 +246,7 @@ class Ai_ssd(object):
 
         img = img[xmin:xmax, ymin:ymax, :]
 
-        logger.debug(img.shape)
+        logger.debug("the recorg picture shape: {}".format(img.shape))
         return img
 
     #   convert content to array
@@ -285,19 +286,19 @@ class Ai_ssd(object):
 
             rec_result = []
 
-            for i in range(img_num):
-                r = self._split_result(detections,i)
-                rec_result.append(r)
+        for i in range(img_num):
+            r = self._split_result(detections,i)
+            rec_result.append(r)
 
-            
-            for i in range(img_num):
-                #rec = imgs_map[i]
-                rec = running_recs[i]['rec']
-                if rec_result[i] :
-                    rec[F.INTELLIGENTRESULTTYPE] = rec[F.INTELLIGENTRESULTTYPE] + ai_types  #暂时没有分析多个能力
-                else:
-                    if len(rec[F.INTELLIGENTRESULTTYPE]) == 0 :
-                        rec[F.INTELLIGENTRESULTTYPE] = [C.RESULT_NO] 
+        
+        for i in range(img_num):
+            #rec = imgs_map[i]
+            rec = running_recs[i]['rec']
+            if rec_result[i] :
+                rec[F.INTELLIGENTRESULTTYPE] = rec[F.INTELLIGENTRESULTTYPE] + ai_types  #暂时没有分析多个能力
+            else:
+                if len(rec[F.INTELLIGENTRESULTTYPE]) == 0 :
+                    rec[F.INTELLIGENTRESULTTYPE] = [C.RESULT_NO] 
 
-            logger.info("Deep looking takes {} secs.".format(time.time()-start_time))
+        logger.info("Deep looking takes {} secs.".format(time.time()-start_time))
 
