@@ -20,7 +20,7 @@ def _fetch_url(task_q,url_fetch_q):
     while True:
         rec = task_q.get()
         if rec[F.ERRORCODE] == 0:
-            logger.debug("fetched task>picUrl: {}".format(rec[F.PICURL]))
+            logger.debug("fetched task->picUrl: {}".format(rec[F.PICURL]))
         url_fetch_q.put(rec)
 
 def _rand_sleep():
