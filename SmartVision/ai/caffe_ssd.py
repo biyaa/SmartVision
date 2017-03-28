@@ -139,18 +139,18 @@ class Ai_ssd(object):
     def is_capability(self,rec):
         return set(self.capability).issubset(rec[F.INTELLIGENTTYPES])
 
-    def filled_by_capaility(self,records):
-        r_map = {} 
-        r_imgs = []
+    #def filled_by_capaility(self,records):
+    #    r_map = {} 
+    #    r_imgs = []
 
-        i = 0
-        for rec in records:
-            if self.is_capability(rec):
-                r_imgs.append(rec[F.IMG])
-                r_map[i] = rec
-                i = i + 1
+    #    i = 0
+    #    for rec in records:
+    #        if self.is_capability(rec):
+    #            r_imgs.append(rec[F.IMG])
+    #            r_map[i] = rec
+    #            i = i + 1
 
-        return (r_imgs,r_map)
+    #    return (r_imgs,r_map)
 
     def verify_coords(self,running_rec):
         result = True
@@ -250,13 +250,13 @@ class Ai_ssd(object):
         return img
 
     #   convert content to array
-    def convert_to_img(self,imgs_content):
-        images = []
-        for img_c in imgs_content:
-            image = self.preprocess_img(img_c)
-            images.append(image)
-        
-        return images
+   # def convert_to_img(self,imgs_content):
+   #     images = []
+   #     for img_c in imgs_content:
+   #         image = self.preprocess_img(img_c)
+   #         images.append(image)
+   #     
+   #     return images
 
 
     #  ananlyize img through by nn
