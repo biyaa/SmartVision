@@ -92,6 +92,7 @@ def create_result_putback_prcs(name="result-putback-process"):
 
 
 def create_all_processes_map():
+    global PROCSSES_CREATE_FUNC_MAP
     PROCSSES_CREATE_FUNC_MAP["task-get-process"] = create_task_getting_prcs
     PROCSSES_CREATE_FUNC_MAP["url-get-process"] = create_url_getting_prcs
     PROCSSES_CREATE_FUNC_MAP["img-get-process"] = create_img_getting_prcs
@@ -130,18 +131,19 @@ def show_queues(ques):
         print("...size of {} we used is {}/{}".format(n,q.qsize(),svs.queue_maxsize))
 
 def restart_process_by_prcs(prcs):
-    print prcs
+    global PROCSSES_CREATE_FUNC_MAP
     if  not prcs.is_alive():
         name = prcs.name
-        func = PROCSSES_CREATE_FUNC_MAP[name]
         if "img-get-process" in name:
             num = name.split("-")[-1]
+            func = PROCSSES_CREATE_FUNC_MAP["img-get-process"]
             if num.isdigit():
-                num = int(num)
-                prcs = func(num) 
+                n = int(num)
+                prcs = func(seq=n) 
                 print "%s is restartting..." %name
                 prcs.start()
         else:
+            func = PROCSSES_CREATE_FUNC_MAP[name]
             prcs = func()
             print prcs
             print "%s is restartting..." %name
@@ -182,10 +184,14 @@ def quit_svs(prcss,ques):
     global task_queue
     global exit_flag
     global quit_event
+    exit_flag = True
+    # 向队列传递退出信号
     quit_obj=exit_mgr.gen_exit_obj()
     task_queue.put(quit_obj)
 
     prcss[0].terminate()
+
+    # 退出余下所有进程
     while True:
         if not get_process_stat_by_name(prcss,"result-putback-process"):
             quit_event.set()
@@ -219,14 +225,14 @@ def main():
     create_all_processes_map()
     run_all_processes(processes)
     daemon_thd = _create_thread(target=daemon_all_processes,args=(processes,queues),name="daemon thread")
-    #daemon_thd.start()
+    daemon_thd.start()
     try:
        daemon_cmd(processes,queues) 
     except KeyboardInterrupt:
-        print("are you sure?")
-        ge.EXIT_FLAG = True
+        quit_svs(processes,queues)
+        print("main stopping...")
 
-    #daemon_thd.join()
+    daemon_thd.join()
     #stop_all_processes(processes)
     #result_queue.join()
 
