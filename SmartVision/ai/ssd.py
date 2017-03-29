@@ -60,10 +60,11 @@ def _put_result(records, result_q, is_ai_pred_exception=True):
         rec = _clear_img(rec)
         result_q.put(rec)
 
-def _recognition_img(img_q,result_q):
+def _recognition_img(img_q,result_q,event):
     ai = Ai_ssd()
     ai.init_model(caffe_root=svs.ssd_root)
-    while not (ge.EXIT_FLAG and img_q.qsize>0):
+    logger.debug("img-recog-process is running...")
+    while not (event.is_set() and img_q.qsize()<1):
         records = _get_next_batch(img_q,result_q,svs.ai_parallel_num)
         imgs = []
         if len(records)>0:
@@ -78,6 +79,7 @@ def _recognition_img(img_q,result_q):
             
             _put_result(records,result_q,is_ai_pred_exception)
 
+    logger.debug("img-recog-process is stopping...")
 
-def recognition_img(img_q,result_q):
-    _recognition_img(img_q,result_q)
+def recognition_img(img_q,result_q,event):
+    _recognition_img(img_q,result_q,event)

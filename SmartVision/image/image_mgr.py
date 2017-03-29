@@ -13,30 +13,30 @@ from ..config.log import logger
 from ..config import svs as svs
 from ..common import fields as F
 from ..common import error as error
-from ..common import global_env as ge
 
 import image_pulling as im_p
 
-def _fetch_url(task_q,url_fetch_q):
-    logger.debug("fetch url process running...")
-    while not (ge.EXIT_FLAG and task_q.qsize>0):
-        if task_q.qsize > 1:
+def _fetch_url(task_q,url_fetch_q,event):
+    logger.info("fetch url process is running...")
+    while not (event.is_set() and task_q.qsize()<1):
+        if task_q.qsize() > 0:
             rec = task_q.get()
             if rec[F.ERRORCODE] == 0:
                 logger.debug("fetched task->picUrl: {}".format(rec[F.PICURL]))
             url_fetch_q.put(rec)
         else:
             time.sleep(0.5)
+    logger.info("fetch url process is stopping...")
+    logger.debug("task_q size: {}".format(task_q.qsize()))
 
 def _rand_sleep():
     rand_num = random.randint(1, 500) * 0.001
     time.sleep(rand_num)
 
-def _fetch_img(url_fetch_q,img_q,retries=3):
-    logger.debug("fetch img process running...")
-    while not (ge.EXIT_FLAG and url_fetch_q.qsize>0):
-        logger.debug("fetchhing img...")
-        if url_fetch_q.qsize > 1:
+def _fetch_img(url_fetch_q,img_q,event,retries=3):
+    logger.info("fetch img process is running...")
+    while not (event.is_set() and url_fetch_q.qsize()<1):
+        if url_fetch_q.qsize() > 0:
             rec = url_fetch_q.get()
             rec[F.IMG] = ""
             retried = 0
@@ -66,9 +66,12 @@ def _fetch_img(url_fetch_q,img_q,retries=3):
             img_q.put(rec)
         else:
             time.sleep(0.5)
+    logger.info("fetch img process is stopping...")
+    logger.debug("url_fetch_q size: {}".format(url_fetch_q.qsize()))
 
-def fetch_url(task_q,url_fetch_q):
-    _fetch_url(task_q,url_fetch_q)
 
-def fetch_img(url_fetch_q,img_q):
-    _fetch_img(url_fetch_q,img_q, retries = svs.img_get_retry)
+def fetch_url(task_q,url_fetch_q,event):
+    _fetch_url(task_q,url_fetch_q,event)
+
+def fetch_img(url_fetch_q,img_q,event):
+    _fetch_img(url_fetch_q,img_q,event, retries = svs.img_get_retry)

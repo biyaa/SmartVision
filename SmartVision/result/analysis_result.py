@@ -17,7 +17,6 @@ from ..config import svs
 from ..common import fields as F
 from ..common import convention as C
 from ..common import error as error
-from ..common import global_env as ge
 
 def _get_next_batch(result_q, num=8):
     records = []
@@ -30,10 +29,11 @@ def _get_next_batch(result_q, num=8):
             break
     return records
 
-def _response_result(result_q):
+def _response_result(result_q,event):
     logger.debug("kafka:{},topic:{},api_version{}".format(svs.servers, svs.result_topic, svs.api_version))
+    logger.debug("result-putback-process is running...")
     producer = KafkaProducer(bootstrap_servers=svs.servers, api_version=svs.api_version,retries=3,client_id=svs.client_id)
-    while not (ge.EXIT_FLAG and result_q.qsize>0):
+    while not event.is_set() and result_q.qsize()<1:
         records = _get_next_batch(result_q)
         #logger.info("size of thread {}".format(len(records)))
         for rec in records:
@@ -51,7 +51,8 @@ def _response_result(result_q):
             producer.send(svs.result_topic, msg)
 
             producer.flush()
+    logger.debug("result-putback-process is stopping...")
 
-def response_result(result_q):
+def response_result(result_q,event):
     #pdb.set_trace()
-    _response_result(result_q)
+    _response_result(result_q,event)

@@ -28,8 +28,9 @@ img_queue = mp.Queue(maxsize=svs.queue_maxsize)                # 图片队列
 result_queue = mp.Queue(maxsize=svs.queue_maxsize)             # 分析结果队列
 
 # 2. 进程状态管理
-process_stat_map = {}
 PROCSSES_CREATE_FUNC_MAP = {}
+quit_event = mp.Event()
+quit_event.clear()
 # 3. 创建进程
 
 def _create_thread(target=None,args=(),name=""):
@@ -46,20 +47,23 @@ def _create_process(target=None,args=(),name=""):
 
 def create_task_getting_prcs(name="task-get-process"):
     global task_queue
-    prcs = _create_process(target = a_task.fetch_task, args = (task_queue,), name = name)
+    global quit_event
+    prcs = _create_process(target = a_task.fetch_task, args = (task_queue,quit_event), name = name)
     return prcs
 
 
 def create_url_getting_prcs(name="url-get-process"):
     global task_queue
     global img_fetching_queue
-    prcs = _create_process(target = img_mgr.fetch_url, args = (task_queue,url_queue), name = name)
+    global quit_event
+    prcs = _create_process(target = img_mgr.fetch_url, args = (task_queue,url_queue,quit_event), name = name)
     return prcs
 
 def create_img_getting_prcs(name="img-get-process", seq = 0):
     global task_queue
     global img_fetching_queue
-    prcs = _create_process(target = img_mgr.fetch_img, args = (url_queue,img_queue),name = name + "-"+ str(seq))
+    global quit_event
+    prcs = _create_process(target = img_mgr.fetch_img, args = (url_queue,img_queue,quit_event),name = name + "-"+ str(seq))
     return prcs
 
 def create_img_getting_prcss(name="img-get-process", para_num = 8):
@@ -74,13 +78,15 @@ def create_img_getting_prcss(name="img-get-process", para_num = 8):
 def create_img_recognition_prcs(name="img-recog-process"):
     global task_queue
     global img_fetching_queue
-    prcs = _create_process(target = ssd.recognition_img, args = (img_queue,result_queue), name = name)
+    global quit_event
+    prcs = _create_process(target = ssd.recognition_img, args = (img_queue,result_queue,quit_event), name = name)
     return prcs
 
 def create_result_putback_prcs(name="result-putback-process"):
     global task_queue
     global img_fetching_queue
-    prcs = _create_process(target = a_result.response_result, args = (result_queue,), name = name)
+    global quit_event
+    prcs = _create_process(target = a_result.response_result, args = (result_queue,quit_event), name = name)
 
     return prcs
 
@@ -161,7 +167,11 @@ def daemon_all_processes(prcss,ques):
         time.sleep(5)
 
 
-def quit_svs():
+def quit_svs(prcss,ques):
+    global quit_event
+    quit_event.set()
+
+    prcss[0].terminate()
     pass
 
 def daemon_cmd(prcss,ques):
@@ -169,7 +179,7 @@ def daemon_cmd(prcss,ques):
         cmd = ""
         cmd = raw_input()
         if cmd == "quit":
-            ge.EXIT_FLAG = True
+            quit_svs(prcss,ques)
             break
 
         if "show pro" in cmd:
@@ -188,9 +198,6 @@ def main():
     processes = create_all_processes()
     create_all_processes_map()
     run_all_processes(processes)
-    time.sleep(10)
-    processes[0].terminate()
-    time.sleep(5)
     daemon_thd = _create_thread(target=daemon_all_processes,args=(processes,queues),name="daemon thread")
     #daemon_thd.start()
     try:
@@ -200,10 +207,11 @@ def main():
         ge.EXIT_FLAG = True
 
     #daemon_thd.join()
-    stop_all_processes(processes)
-
+    #stop_all_processes(processes)
+    #result_queue.join()
 
     print("main ended...")
+    cmd = raw_input()
     sys.exit(0)
 
 if __name__ == "__main__":

@@ -13,9 +13,9 @@ from ..config.log import logger
 from ..config import svs
 from ..common import error as error
 from ..common import fields as F
-from ..common import global_env as ge
 
-def _fetch_msg(consumer,q):
+def _fetch_msg(consumer,q,event):
+    logger.info("task-get-process is running...")
     consumer.subscribe(svs.task_topic)
     for msg in consumer:
         value = msg.value
@@ -34,17 +34,17 @@ def _fetch_msg(consumer,q):
             logger.error("Task Centent:{}".format(value))
             logger.error("Task Error Type:{}".format(repr(e)))
         finally:
-            if ge.EXIT_FLAG:
+            if event.is_set():
                 break
 
+    logger.info("task-get-process is stopping...")
 
-def _fetch_task(q):
-    logger.info("fetch task is running...")
+def _fetch_task(q,event):
 
     logger.debug("kafka:{},topic:{},api_version{}".format(svs.servers, svs.task_topic, svs.api_version))
     consumer = KafkaConsumer(bootstrap_servers=svs.servers, api_version=svs.api_version,client_id=svs.client_id,group_id=svs.group_id)
     try:
-        _fetch_msg(consumer,q)
+        _fetch_msg(consumer,q,event)
     except KeyboardInterrupt:
         logger.error("consumer is stopped.")
         raise
@@ -65,5 +65,5 @@ def _verify_ele(rec):
     logger.debug("Check task format: " + str(result))
     return result
 
-def fetch_task(q):
-    _fetch_task(q)
+def fetch_task(q,event):
+    _fetch_task(q,event)
