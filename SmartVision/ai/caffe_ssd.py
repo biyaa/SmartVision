@@ -284,6 +284,7 @@ class Ai_ssd(object):
         # Forward pass.
         detections = self.net.forward()['detection_out']
 
+        logger.info("Pure ai takes {} secs.".format(time.time()-start_time))
         rec_result = []
 
         for i in range(img_num):

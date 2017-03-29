@@ -11,6 +11,7 @@ from ..config.log import logger
 from ..config import svs
 from ..common import fields as F
 from ..common import error as error
+from ..common import global_env as ge
 from .caffe_ssd import Ai_ssd
 def _is_analysizable(rec):
     result = False
@@ -62,7 +63,7 @@ def _put_result(records, result_q, is_ai_pred_exception=True):
 def _recognition_img(img_q,result_q):
     ai = Ai_ssd()
     ai.init_model(caffe_root=svs.ssd_root)
-    while True:
+    while not (ge.EXIT_FLAG and img_q.qsize>0):
         records = _get_next_batch(img_q,result_q,svs.ai_parallel_num)
         imgs = []
         if len(records)>0:

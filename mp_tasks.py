@@ -7,9 +7,10 @@
     copyright: hikvision(c) 2017 company limited.
 """
 
-import multiprocessing as mp
-import time
 import sys
+import time
+import threading
+import multiprocessing as mp
 import SmartVision.config.svs as svs
 import SmartVision.common.global_env as ge
 import SmartVision.task.analysis_task as a_task
@@ -34,7 +35,7 @@ PROCSSES_CREATE_FUNC_MAP = {}
 def _create_thread(target=None,args=(),name=""):
     global thread_stat_map
     prcs = threading.Thread(target = target, args = args, name = name)
-    prcs.setDaemon(True)
+    #prcs.setDaemon(True)
     return prcs
 
 def _create_process(target=None,args=(),name=""):
@@ -103,10 +104,15 @@ def create_all_processes():
     return prcss
     
 
-def run_all_threads(prcss):
+def run_all_processes(prcss):
     for prcs in prcss:
         print(prcs.name + " is running...")
         prcs.start()
+
+def stop_all_processes(prcss):
+    for prcs in prcss:
+        print(prcs.name + " is stopping...")
+        prcs.join()
 
 def show_processes(prcss):
     for t in prcss:
@@ -117,24 +123,49 @@ def show_queues(ques):
     for q,n in zip(ques,names):
         print("...size of {} we used is {}/{}".format(n,q.qsize(),svs.queue_maxsize))
 
-def restart_process(prcss,name):
-    for prcs in prcss:
-        if prcs.name == name and not prcs.is_alive():
-            func = PROCSSES_CREATE_FUNC_MAP[name]
-            if "img-get-process" in name:
-                num = name.split("-")[-1]
-                if num.isdigit():
-                    num = int(num)
-                    prcs = func(num) 
-                    print "%s is restartting..." %name
-                    prcs.start()
-            else:
-                prcs = func()
+def restart_process_by_prcs(prcs):
+    print prcs
+    if  not prcs.is_alive():
+        name = prcs.name
+        func = PROCSSES_CREATE_FUNC_MAP[name]
+        if "img-get-process" in name:
+            num = name.split("-")[-1]
+            if num.isdigit():
+                num = int(num)
+                prcs = func(num) 
                 print "%s is restartting..." %name
                 prcs.start()
+        else:
+            prcs = func()
+            print prcs
+            print "%s is restartting..." %name
+            prcs.start()
+            print prcs
+    return prcs
+
+def restart_process_by_name(prcss,name):
+    for i in range(len(prcss)):
+        prcs = prcss[i]
+        if prcs.name == name and not prcs.is_alive():
+            prcs = restart_process_by_prcs(prcs) 
+            prcss[i] = prcs
 
 def daemon_all_processes(prcss,ques):
-    while True:
+    while not ge.EXIT_FLAG:
+        for i in range(len(prcss)):
+            if not prcss[i].is_alive():
+                print prcss[i]
+                #print "%s %s" % (prcs.name,prcs.is_alive())
+                prcss[i] = restart_process_by_prcs(prcss[i])
+
+        time.sleep(5)
+
+
+def quit_svs():
+    pass
+
+def daemon_cmd(prcss,ques):
+    while not ge.EXIT_FLAG:
         cmd = ""
         cmd = raw_input()
         if cmd == "quit":
@@ -149,17 +180,27 @@ def daemon_all_processes(prcss,ques):
 
         if "restart" in cmd :
             name = cmd.split(" ")[-1]
-            restart_process(prcss, name)
+            restart_process_by_name(prcss, name)
 
-        time.sleep(5)
 
 def main():
     queues = [task_queue,url_queue,img_queue,result_queue]
     processes = create_all_processes()
     create_all_processes_map()
-    run_all_threads(processes)
-    daemon_all_processes(processes,queues)
-    processes[0].join()
+    run_all_processes(processes)
+    time.sleep(10)
+    processes[0].terminate()
+    time.sleep(5)
+    daemon_thd = _create_thread(target=daemon_all_processes,args=(processes,queues),name="daemon thread")
+    #daemon_thd.start()
+    try:
+       daemon_cmd(processes,queues) 
+    except KeyboardInterrupt:
+        print("are you sure?")
+        ge.EXIT_FLAG = True
+
+    #daemon_thd.join()
+    stop_all_processes(processes)
 
 
     print("main ended...")

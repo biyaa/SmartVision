@@ -15,11 +15,7 @@ from ..common import error as error
 from ..common import fields as F
 from ..common import global_env as ge
 
-def _fetch_task(q):
-    logger.info("fetch task is running...")
-
-    logger.debug("kafka:{},topic:{},api_version{}".format(svs.servers, svs.task_topic, svs.api_version))
-    consumer = KafkaConsumer(bootstrap_servers=svs.servers, api_version=svs.api_version,client_id=svs.client_id,group_id=svs.group_id)
+def _fetch_msg(consumer,q):
     consumer.subscribe(svs.task_topic)
     for msg in consumer:
         value = msg.value
@@ -41,6 +37,17 @@ def _fetch_task(q):
             if ge.EXIT_FLAG:
                 break
 
+
+def _fetch_task(q):
+    logger.info("fetch task is running...")
+
+    logger.debug("kafka:{},topic:{},api_version{}".format(svs.servers, svs.task_topic, svs.api_version))
+    consumer = KafkaConsumer(bootstrap_servers=svs.servers, api_version=svs.api_version,client_id=svs.client_id,group_id=svs.group_id)
+    try:
+        _fetch_msg(consumer,q)
+    except KeyboardInterrupt:
+        logger.error("consumer is stopped.")
+        raise
 
 
 def _verify_ele(rec):

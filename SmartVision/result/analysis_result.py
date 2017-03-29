@@ -17,6 +17,7 @@ from ..config import svs
 from ..common import fields as F
 from ..common import convention as C
 from ..common import error as error
+from ..common import global_env as ge
 
 def _get_next_batch(result_q, num=8):
     records = []
@@ -32,7 +33,7 @@ def _get_next_batch(result_q, num=8):
 def _response_result(result_q):
     logger.debug("kafka:{},topic:{},api_version{}".format(svs.servers, svs.result_topic, svs.api_version))
     producer = KafkaProducer(bootstrap_servers=svs.servers, api_version=svs.api_version,retries=3,client_id=svs.client_id)
-    while True:
+    while not (ge.EXIT_FLAG and result_q.qsize>0):
         records = _get_next_batch(result_q)
         #logger.info("size of thread {}".format(len(records)))
         for rec in records:
