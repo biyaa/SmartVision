@@ -17,12 +17,18 @@ from ..config import svs
 from ..common import fields as F
 from ..common import convention as C
 from ..common import error as error
+from ..common import exit as exit_mgr
 
+exit_flag = False
 def _get_next_batch(result_q, num=8):
+    global exit_flag
     records = []
     for i in range(num):
         if result_q.qsize() >0:
             rec = result_q.get()
+            exit_flag = exit_mgr.is_sms_exit(rec[F.PICURL]) or exit_flag
+            if exit_flag:
+                continue
             records.append(rec)
         else:
             time.sleep(0.1)  # interval 100 millisecs to submit to analyzie
@@ -33,7 +39,8 @@ def _response_result(result_q,event):
     logger.debug("kafka:{},topic:{},api_version{}".format(svs.servers, svs.result_topic, svs.api_version))
     logger.debug("result-putback-process is running...")
     producer = KafkaProducer(bootstrap_servers=svs.servers, api_version=svs.api_version,retries=3,client_id=svs.client_id)
-    while not event.is_set() and result_q.qsize()<1:
+    global exit_flag
+    while not (exit_flag and result_q.qsize()<1):
         records = _get_next_batch(result_q)
         #logger.info("size of thread {}".format(len(records)))
         for rec in records:

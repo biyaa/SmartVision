@@ -12,13 +12,13 @@ import time
 import threading
 import multiprocessing as mp
 import SmartVision.config.svs as svs
-import SmartVision.common.global_env as ge
+import SmartVision.common.exit as exit_mgr
 import SmartVision.task.analysis_task as a_task
 import SmartVision.image.image_mgr as img_mgr
 import SmartVision.ai.ssd as ssd
 import SmartVision.result.analysis_result as a_result
 
-
+exit_flag  = False
 
 # 1. 创建队列
 
@@ -156,8 +156,19 @@ def restart_process_by_name(prcss,name):
             prcs = restart_process_by_prcs(prcs) 
             prcss[i] = prcs
 
+def get_process_stat_by_name(prcss,name):
+    result = None
+    for i in range(len(prcss)):
+        prcs = prcss[i]
+        if prcs.name == name:
+            result = prcs.is_alive()
+            break
+        
+    return result
+
 def daemon_all_processes(prcss,ques):
-    while not ge.EXIT_FLAG:
+    global exit_flag
+    while not exit_flag:
         for i in range(len(prcss)):
             if not prcss[i].is_alive():
                 print prcss[i]
@@ -168,14 +179,23 @@ def daemon_all_processes(prcss,ques):
 
 
 def quit_svs(prcss,ques):
+    global task_queue
+    global exit_flag
     global quit_event
-    quit_event.set()
+    quit_obj=exit_mgr.gen_exit_obj()
+    task_queue.put(quit_obj)
 
     prcss[0].terminate()
-    pass
+    while True:
+        if not get_process_stat_by_name(prcss,"result-putback-process"):
+            quit_event.set()
+            break
+        time.sleep(0.1)
+    
 
 def daemon_cmd(prcss,ques):
-    while not ge.EXIT_FLAG:
+    global exit_flag
+    while not exit_flag:
         cmd = ""
         cmd = raw_input()
         if cmd == "quit":

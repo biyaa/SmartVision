@@ -11,8 +11,9 @@ from ..config.log import logger
 from ..config import svs
 from ..common import fields as F
 from ..common import error as error
-from ..common import global_env as ge
+from ..common import exit as exit_mgr
 from .caffe_ssd import Ai_ssd
+exit_flag = False
 def _is_analysizable(rec):
     result = False
     if rec[F.ERRORCODE] == 0:
@@ -27,10 +28,15 @@ def _get_batch_imgs(records):
     return imgs
 
 def _get_next_batch(img_q, result_q, num):
+    global exit_flag
     records = []
     for i in range(num):
         if img_q.qsize() >0:
             rec = img_q.get()
+            exit_flag = exit_mgr.is_sms_exit(rec[F.PICURL]) or exit_flag
+            if exit_flag:
+                continue
+
             if _is_analysizable(rec):
                 records.append(rec)
             else:
@@ -64,7 +70,8 @@ def _recognition_img(img_q,result_q,event):
     ai = Ai_ssd()
     ai.init_model(caffe_root=svs.ssd_root)
     logger.debug("img-recog-process is running...")
-    while not (event.is_set() and img_q.qsize()<1):
+    global exit_flag
+    while not (exit_flag and img_q.qsize()<1):
         records = _get_next_batch(img_q,result_q,svs.ai_parallel_num)
         imgs = []
         if len(records)>0:
@@ -79,6 +86,7 @@ def _recognition_img(img_q,result_q,event):
             
             _put_result(records,result_q,is_ai_pred_exception)
 
+    result_q.put(exit_mgr.gen_exit_obj())
     logger.debug("img-recog-process is stopping...")
 
 def recognition_img(img_q,result_q,event):

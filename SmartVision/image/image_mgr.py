@@ -12,20 +12,28 @@ import random
 from ..config.log import logger
 from ..config import svs as svs
 from ..common import fields as F
+from ..common import exit as exit_mgr
 from ..common import error as error
 
 import image_pulling as im_p
 
 def _fetch_url(task_q,url_fetch_q,event):
     logger.info("fetch url process is running...")
-    while not (event.is_set() and task_q.qsize()<1):
+    exit_flag = False
+    while not ((exit_flag or event.is_set()) and task_q.qsize()<1):
         if task_q.qsize() > 0:
             rec = task_q.get()
+
+            exit_flag = exit_mgr.is_sms_exit(rec[F.PICURL]) or exit_flag
+            if exit_flag:
+                continue
+
             if rec[F.ERRORCODE] == 0:
                 logger.debug("fetched task->picUrl: {}".format(rec[F.PICURL]))
             url_fetch_q.put(rec)
         else:
             time.sleep(0.5)
+    url_fetch_q.put(exit_mgr.gen_exit_obj())
     logger.info("fetch url process is stopping...")
     logger.debug("task_q size: {}".format(task_q.qsize()))
 
@@ -35,9 +43,15 @@ def _rand_sleep():
 
 def _fetch_img(url_fetch_q,img_q,event,retries=3):
     logger.info("fetch img process is running...")
-    while not (event.is_set() and url_fetch_q.qsize()<1):
+    exit_flag = False
+    while not ((exit_flag or event.is_set()) and url_fetch_q.qsize()<1):
         if url_fetch_q.qsize() > 0:
             rec = url_fetch_q.get()
+            
+            exit_flag = exit_mgr.is_sms_exit(rec[F.PICURL]) or exit_flag
+            if exit_flag:
+                continue
+
             rec[F.IMG] = ""
             retried = 0
             normal = True
@@ -66,6 +80,7 @@ def _fetch_img(url_fetch_q,img_q,event,retries=3):
             img_q.put(rec)
         else:
             time.sleep(0.5)
+    img_q.put(exit_mgr.gen_exit_obj())
     logger.info("fetch img process is stopping...")
     logger.debug("url_fetch_q size: {}".format(url_fetch_q.qsize()))
 
