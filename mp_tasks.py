@@ -42,7 +42,7 @@ def _create_thread(target=None,args=(),name=""):
 def _create_process(target=None,args=(),name=""):
     global process_stat_map
     prcs = mp.Process(target = target, args = args, name = name)
-    #prcs.daemon = True
+    prcs.daemon = True
     return prcs
 
 def create_task_getting_prcs(name="task-get-process"):
