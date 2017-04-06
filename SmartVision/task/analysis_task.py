@@ -33,6 +33,7 @@ def _fetch_msg(consumer,q,event):
         except Exception, e:
             logger.error("Task Centent:{}".format(value))
             logger.error("Task Error Type:{}".format(repr(e)))
+
         finally:
             if event.is_set():
                 break

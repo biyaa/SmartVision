@@ -59,7 +59,7 @@ class Ai_ssd(object):
         '''
         umbrella chair
         table
-        chair >= 6
+        chair >= 3
         '''
         #limistprint = {"umbrella":0.1,"chair":0.1,"dining table":0.1}
         limistprint = {"umbrella":0,"chair":0,"dining table":0}
@@ -69,7 +69,7 @@ class Ai_ssd(object):
             if label_name in limistprint:
                 limistprint[label_name]=limistprint[label_name]+1
 
-        if limistprint["dining table"] > 0 or limistprint["chair"] >=5 or (limistprint["chair"] > 0 and limistprint["umbrella"]):
+        if limistprint["dining table"] > 0 or limistprint["chair"] >=3 or (limistprint["chair"] > 0 and limistprint["umbrella"]):
             return True
         else:
             return False

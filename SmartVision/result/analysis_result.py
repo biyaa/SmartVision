@@ -53,8 +53,9 @@ def _response_result(result_q,event):
 
 
             logger.debug("Through SmartVision AI, it preds the result(s) as blow:\n{}".format(rec))
-        if len(records):
+        if len(records)>0:
             msg = json.dumps(records)
+            logger.debug(msg)
             producer.send(svs.result_topic, msg)
 
             producer.flush()
