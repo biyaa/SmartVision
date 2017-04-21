@@ -1,0 +1,2 @@
+tar -zvcf `echo $(date +%Y%m%d)`_SmartVision.tar.gz --exclude=.log  --exclude=.svn SmartVision/
+

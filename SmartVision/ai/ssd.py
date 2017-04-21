@@ -13,6 +13,7 @@ from ..common import fields as F
 from ..common import error as error
 from ..common import exit as exit_mgr
 from .caffe_ssd import Ai_ssd
+from .caffe_ssd_without_area import Ai_ssd_without_area as Ai_no_area
 exit_flag = False
 def _is_analysizable(rec):
     result = False
@@ -67,7 +68,14 @@ def _put_result(records, result_q, is_ai_pred_exception=True):
         result_q.put(rec)
 
 def _recognition_img(img_q,result_q,event):
-    ai = Ai_ssd()
+    ai = None
+    if svs.splits_enable == 1:
+        logger.info("Ai without area coords")
+        ai = Ai_no_area()
+    else:
+        logger.info("Ai with area coords")
+        ai = Ai_ssd()
+
     ai.init_model(caffe_root=svs.ssd_root)
     logger.debug("img-recog-process is running...")
     global exit_flag

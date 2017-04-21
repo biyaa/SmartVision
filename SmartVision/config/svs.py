@@ -21,6 +21,7 @@ queue_maxsize = 32
 img_get_parallel_num = 8
 img_get_retry = 3
 ai_parallel_num = 8
+splits_enable = 0
 
 
 with codecs.open('SmartVision/config/svs.conf', 'r', encoding='utf-8') as f:
@@ -65,3 +66,5 @@ with codecs.open('SmartVision/config/svs.conf', 'r', encoding='utf-8') as f:
     if cp.has_option('svs', 'img_get_retry'):
         img_get_retry = cp.getint('svs','img_get_retry')
 
+    if cp.has_option('svs', 'splits_enable'):
+        splits_enable = cp.getint('svs','splits_enable')
