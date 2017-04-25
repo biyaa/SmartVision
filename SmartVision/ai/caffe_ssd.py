@@ -244,7 +244,7 @@ class Ai_ssd(object):
         elif img.shape[2] == 4:
             img = img[:, :, :3]
 
-        img = img[xmin:xmax, ymin:ymax, :]
+        img = img[ymin:ymax, xmin:xmax, :]
 
         logger.debug("the recorg picture shape: {}".format(img.shape))
         return img
